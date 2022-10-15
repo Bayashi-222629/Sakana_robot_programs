@@ -1,4 +1,4 @@
-/*作成こばやし　2022/10/1更新　*/
+/*作成こばやし　2022/10/15更新　*/
 
 #include <Wire.h>
 #include "SparkFun_MMA8452Q.h"
