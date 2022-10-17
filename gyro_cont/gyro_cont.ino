@@ -1,4 +1,6 @@
-/*作成こばやし　2022/10/17更新　*/
+/*作成こばやし　2022/10/17更新
+コメントの()内の文言は、その関数の内容がどのファイルに入っているか示しています！
+例：「//～(set_func)」＝gyro_set_func.inoに記述*/
 
 #include <Wire.h>
 #include "SparkFun_MMA8452Q.h"
@@ -36,8 +38,8 @@ void setup()
 {
   Serial.begin(9600);
   Wire.begin();
-  motor_standby(servo_first_deg, servo_speed);
-  check_sensor();
+  motor_standby(servo_first_deg, servo_speed); //モータを初期位置に移動させる(gyro_set_func)
+  check_sensor();                              //センサーの接続確認を行う(gyro_set_func)
 
   delay(2000);
 }
@@ -58,7 +60,7 @@ void loop()
   x_average = x_sum / sampling;
   y_average = y_sum / sampling;
   z_average = z_sum / sampling;
-  float x_ang = change_deg(x_average, z_average); //角度をx,zの値から計算するよ！
+  float x_ang = change_deg(x_average, z_average); //角度をx,zの値から計算する(gyro_set_func)
   float y_ang = change_deg(y_average, z_average); //分度器で測ったところ、±1°くらいに収まった。
   float z_ang = ac.getCalculatedZ();
 
