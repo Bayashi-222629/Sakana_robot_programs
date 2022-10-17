@@ -1,4 +1,4 @@
-/*作成こばやし　2022/10/15更新　*/
+/*作成こばやし　2022/10/17更新　*/
 
 #include <Wire.h>
 #include "SparkFun_MMA8452Q.h"
@@ -15,80 +15,84 @@ VarSpeedServo vss_down;
 
 const float up = 180, down = -180; //シリアルプロッタの上限と下限の設定
 
-const int servo_speed = 80; //サーボモータの回転速度
-const int servo_first_pos = 0; //サーボモータの初期位置
+const float offset_deg = 0.0;  //モータの自然な角度
+const float max_deg = 180.0;   //モータ角度上限
+const float min_deg = 0.0;     //モータ標角度下限
+const int servo_first_deg = 0; //サーボモータの初期角度
+const int servo_speed = 80;    //サーボモータの回転速度
+const int sampling = 20;       //角度データのサンプリング回数
 
-const int sampling = 10; //角度データのサンプリング回数
-const float target = 90.0; //目標角度
-const float target_max = 92.0; //目標角度上限
-const float target_min = 88.0; //目標角度下限
-
-const float kp = 0.1; //PID各種ゲイン
-const float ki = 0.5;
-const float kd = 0.5;
-
-float buff;
-
-/*関数いろいろ------------------------------------------------------------------------------------*/
-int check_sensor(){  //センサの接続チェック
-  while (!ac.begin()) {
-    Serial.println("角度センサの応答がありません！配線位置を確認してみて！");
-    delay(2000);
-  }
-}
-
-float change_deg(float x_y_deg, float z_deg){ //ｘｙの値とｚの値を元に角度を計算する。
-  float  deg = round(atan2(x_y_deg , z_deg) * 180.0 / PI);
-  
-  return deg;
-}
+float target_deg = 90.0;     //目標角度
+float target_deg_max = 95.0; //許容角度上限
+float target_deg_min = 85.0; //許容角度下限
+float deg = 0.0, ctl_deg = 0.0, output_deg = 0.0;
+float kp = 2, ki = 0.5, kd = 0.1; // PID各種ゲイン
+float P, I, D;
+float dt = 0.0, pre_dt = 0.0, pre_P = 0.0;
 
 /*------------------------------------------------------------------------------------------------*/
 
-void setup() {
+void setup()
+{
   Serial.begin(9600);
   Wire.begin();
-
-  vss_right.attach(SERVO_NUM_RIGHT);
-  vss_left.attach(SERVO_NUM_LEFT);
-  vss_up.attach(SERVO_NUM_UP);
-  vss_down.attach(SERVO_NUM_DOWN);
+  motor_standby(servo_first_deg, servo_speed);
   check_sensor();
-  //vss.write(servo_first_pos, servo_speed, true); //各モータの初期位置の設定
 
   delay(2000);
 }
 
-
 /*------------------------------------------------------------------------------------------------*/
-void loop() {
-  if (ac.available()) {
+void loop()
+{
 
-    float x_sum = 0, y_sum = 0, z_sum = 0, x_average, y_average, z_average ;
+  float x_sum = 0, y_sum = 0, z_sum = 0, x_average, y_average, z_average;
 
-    for (int i = 0; i < sampling; i++) {   //ノイズ軽減のため、[sampling]回データを取って平均する。
-      x_sum = x_sum + ac.getCalculatedX(); //取得データのばらつきが大分マシになる！
-      y_sum = y_sum + ac.getCalculatedY();
-      z_sum = z_sum + ac.getCalculatedZ();
-    }
-    x_average = x_sum / sampling;
-    y_average = y_sum / sampling;
-    z_average = z_sum / sampling;
-
-    float x_ang = change_deg(x_average, z_average);  //角度をx,zの値から計算するよ！
-    float y_ang = change_deg(y_average, z_average);  //分度器で測ったところ、±1°くらいに収まった。
-    float z_ang = ac.getCalculatedZ();
-
-
-    String str = "||||xの角度:" + String(x_ang) + "," + "yの角度:" + String(y_ang); //シリアルモニタ表示用のメッセージ
-    String graph = ("||||設定用：" + String(up) + "," + String(down));
-    Serial.println(str + graph);
-
-    buff = target - x_ang;
-    vss_right.write(buff,servo_speed,true);
-    
-
-    //delay(5);
-
+  for (int i = 0; i < sampling; i++)
+  {                                      //ノイズ軽減のため、[sampling]回データを取って平均する。
+    x_sum = x_sum + ac.getCalculatedX(); //取得データのばらつきが大分マシになる！
+    y_sum = y_sum + ac.getCalculatedY();
+    z_sum = z_sum + ac.getCalculatedZ();
   }
+
+  x_average = x_sum / sampling;
+  y_average = y_sum / sampling;
+  z_average = z_sum / sampling;
+  float x_ang = change_deg(x_average, z_average); //角度をx,zの値から計算するよ！
+  float y_ang = change_deg(y_average, z_average); //分度器で測ったところ、±1°くらいに収まった。
+  float z_ang = ac.getCalculatedZ();
+
+  // vss_right.write(ctl_deg, servo_speed, true);
+
+  if (!((x_ang + target_deg) > target_deg_min && (x_ang + target_deg) < target_deg_max && (y_ang + target_deg) > target_deg_min && (y_ang + target_deg) < target_deg_max))
+  {
+
+    dt = (micros() - pre_dt) / 1000000; //疑似の微小時間
+    pre_dt = micros();
+    P = offset_deg - x_ang; //偏差
+    I += P * dt;            //積分項（偏差*微小時間）
+    D = (P - pre_P) / dt;   //微分項（傾き/微小時間）
+
+    pre_P = P;
+
+    ctl_deg += (P * kp) + (I * ki) + (D * kd); // 0を中心にどのくらい変化させるか？
+    output_deg = ctl_deg + target_deg;         //ターゲット角度まで増加させただけ
+    if (output_deg > max_deg)
+    {
+      ctl_deg = max_deg;
+      output_deg = max_deg;
+    }
+    else if (output_deg < min_deg)
+    {
+      ctl_deg = min_deg;
+      output_deg = min_deg;
+    }
+
+    String str = "xの角度:" + String(x_ang) + "," + "yの角度:" + String(y_ang); //シリアルモニタ表示用のメッセージ
+    // String str = "P:" + String(P) + ",   " + "I:" + String(I) + ",   " + "D:" + String(D);
+    //  String str = "output:" + String(output_deg) + "ctl:" + String(ctl_deg) + "target:" + String(target_deg);
+    String graph = (String(up) + "," + String(down));
+    Serial.println(str);
+  }
+  // delay(10);
 }
