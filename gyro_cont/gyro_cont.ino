@@ -1,6 +1,6 @@
 /*作成こばやし　2022/10/17更新
 コメントの()内の文言は、その関数の内容がどのファイルに入っているか示しています！
-例：「//～(set_func)」＝gyro_set_func.inoに記述*/
+例：「//～(gyro_set_func)」＝gyro_set_func.inoに記述*/
 
 #include <Wire.h>
 #include "SparkFun_MMA8452Q.h"
@@ -24,13 +24,21 @@ const int servo_first_deg = 0; //サーボモータの初期角度
 const int servo_speed = 80;    //サーボモータの回転速度
 const int sampling = 20;       //角度データのサンプリング回数
 
-float target_deg = 90.0;     //目標角度
 float target_deg_max = 95.0; //許容角度上限
 float target_deg_min = 85.0; //許容角度下限
-float deg = 0.0, ctl_deg = 0.0, output_deg = 0.0;
-float kp = 2, ki = 0.5, kd = 0.1; // PID各種ゲイン
-float P, I, D;
-float dt = 0.0, pre_dt = 0.0, pre_P = 0.0;
+
+/*X軸用のPID変数*/
+float target_deg_x = 90.0;              //目標角度
+float kp_x = 2, ki_x = 0.5, kd_x = 0.1; // PIDゲイン
+float P_x, I_x, D_x;                    // PID値保存パラメータ
+float deg_x = 0.0, ctl_deg_x = 0.0;
+float dt_x = 0.0, pre_dt_x = 0.0, pre_P_x = 0.0;
+/*Y軸用のPID変数*/
+float target_deg_y = 90.0;
+float kp_y = 2, ki_y = 0.5, kd_y = 0.1;
+float P_y, I_y, D_y;
+float deg_y = 0.0, ctl_deg_y = 0.0;
+float dt_y = 0.0, pre_dt_y = 0.0, pre_P_y = 0.0;
 
 /*------------------------------------------------------------------------------------------------*/
 
@@ -66,35 +74,21 @@ void loop()
 
   // vss_right.write(ctl_deg, servo_speed, true);
 
-  if (!((x_ang + target_deg) > target_deg_min && (x_ang + target_deg) < target_deg_max && (y_ang + target_deg) > target_deg_min && (y_ang + target_deg) < target_deg_max))
+  /*指定した範囲内に角度が収まっていなければPID制御を開始する。*/
+  if (!((x_ang + target_deg_x) > target_deg_min && (x_ang + target_deg_x) < target_deg_max && (y_ang + target_deg_x) > target_deg_min && (y_ang + target_deg_x) < target_deg_max))
   {
-
-    dt = (micros() - pre_dt) / 1000000; //疑似の微小時間
-    pre_dt = micros();
-    P = offset_deg - x_ang; //偏差
-    I += P * dt;            //積分項（偏差*微小時間）
-    D = (P - pre_P) / dt;   //微分項（傾き/微小時間）
-
-    pre_P = P;
-
-    ctl_deg += (P * kp) + (I * ki) + (D * kd); // 0を中心にどのくらい変化させるか？
-    output_deg = ctl_deg + target_deg;         //ターゲット角度まで増加させただけ
-    if (output_deg > max_deg)
-    {
-      ctl_deg = max_deg;
-      output_deg = max_deg;
-    }
-    else if (output_deg < min_deg)
-    {
-      ctl_deg = min_deg;
-      output_deg = min_deg;
-    }
-
-    String str = "xの角度:" + String(x_ang) + "," + "yの角度:" + String(y_ang); //シリアルモニタ表示用のメッセージ
-    // String str = "P:" + String(P) + ",   " + "I:" + String(I) + ",   " + "D:" + String(D);
-    //  String str = "output:" + String(output_deg) + "ctl:" + String(ctl_deg) + "target:" + String(target_deg);
-    String graph = (String(up) + "," + String(down));
-    Serial.println(str);
+    float X = PID_ctl_x(x_ang);
   }
+  if (!((y_ang + target_deg_y) > target_deg_min && (y_ang + target_deg_y) < target_deg_max && (y_ang + target_deg_y) > target_deg_min && (y_ang + target_deg_y) < target_deg_max))
+  {
+    float y = PID_ctl_y(y_ang);
+  }
+
+  String str = "xの角度:" + String(x_ang) + "," + "yの角度:" + String(y_ang); //シリアルモニタ表示用のメッセージ
+  // String str = "P:" + String(P) + ",   " + "I:" + String(I) + ",   " + "D:" + String(D);
+  //  String str = "output:" + String(output_deg) + "ctl:" + String(ctl_deg) + "target:" + String(target_deg);
+  String graph = (String(up) + "," + String(down));
+  Serial.println(str);
+
   // delay(10);
 }
