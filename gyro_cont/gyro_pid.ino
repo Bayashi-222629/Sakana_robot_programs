@@ -13,7 +13,6 @@ static float dt_y, pre_dt_y, pre_P_y;
 /*X軸用のPID*/
 float PID_ctl_x(float x_ang)
 {
-    x_ang += target_deg_x;
 
     dt_x = (micros() - pre_dt_x) / 1000000; //疑似の微小時間
     pre_dt_x = micros();
@@ -22,10 +21,8 @@ float PID_ctl_x(float x_ang)
     D_x = (P_x - pre_P_x) * 1 / dt_x; //微分項（傾き/微小時間）
     pre_P_x = P_x;
 
-    ctl_deg_x += (P_x * kp_x) + (I_x * ki_x) + (D_x * kd_x); // 0を中心にどのくらい変化させるか？
-    output_deg = ctl_deg_x;                                  //ターゲット角度まで増加させる。
-
-    Serial.println(/*"P:" + String(round(P_x)) + ",  " + "I:" + String(round(I_x)) + ",  " + "D:" + String(round(D_x)) + ",  " +*/ "ang:" + String(round(x_ang)) + ",  " + "ctl:" + String(round(ctl_deg_x)) + ",  " + "out:" + String(output_deg));
+    ctl_deg_x = (P_x * kp_x) + (I_x * ki_x) + (D_x * kd_x); // 0を中心にどのくらい変化させるか？
+    output_deg = ctl_deg_x + target_deg_x;
 
     if (output_deg > deg_max) //モータの動く角度を制限する。
     {
@@ -39,6 +36,7 @@ float PID_ctl_x(float x_ang)
         ctl_deg_x = deg_min;
         output_deg = deg_min;
     }
+    Serial.println(/*"P:" + String(round(P_x)) + ",  " + "I:" + String(round(I_x)) + ",  " + "D:" + String(round(D_x)) + ",  " +*/ "ang:" + String(round(x_ang)) + ",  " + "ctl:" + String(round(ctl_deg_x)) + ",  " + "out:" + String(output_deg));
 
     return output_deg;
 }
@@ -46,42 +44,29 @@ float PID_ctl_x(float x_ang)
 /*Y軸用のPID*/
 float PID_ctl_y(float y_ang)
 {
-    output_deg = 0.0;
 
     dt_y = (micros() - pre_dt_y) / 1000000;
     pre_dt_y = micros();
-    P_y = offset_deg - y_ang;
+    P_y = target_deg_y - y_ang;
     I_y += P_y * dt_y;
-    D_y = (P_y - pre_P_y) / dt_y;
-
+    D_y = (P_y - pre_P_y) * 1 / dt_y;
     pre_P_y = P_y;
 
-    ctl_deg_y += (P_y * kp_y) + (I_y * ki_y) + (D_y * kd_y);
+    ctl_deg_y = (P_y * kp_y) + (I_y * ki_y) + (D_y * kd_y); // 0を中心にどのくらい変化させるか？
     output_deg = ctl_deg_y + target_deg_y;
 
     if (output_deg > deg_max)
     {
+        P_y = 0.0, I_y = 0.0, D_y = 0.0;
         ctl_deg_y = deg_max;
         output_deg = deg_max;
     }
     else if (output_deg < deg_min)
     {
+        P_y = 0.0, I_y = 0.0, D_y = 0.0;
         ctl_deg_y = deg_min;
         output_deg = deg_min;
     }
 
     return output_deg;
-}
-
-void PID_reset_x()
-{
-    P_x = 0.0, I_x = 0.0, D_x = 0.0;
-    deg_x = 0.0, ctl_deg_x = 0.0;
-    dt_x = 0.0, pre_dt_x = 0.0, pre_P_x = 0.0;
-}
-void PID_reset_y()
-{
-    P_y = 0.0, I_y = 0.0, D_y = 0.0;
-    deg_y = 0.0, ctl_deg_y = 0.0;
-    dt_y = 0.0, pre_dt_y = 0.0, pre_P_y = 0.0;
 }
