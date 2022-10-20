@@ -1,6 +1,7 @@
 /*作成こばやし　2022/10/17更新
-コメントの()内の文言は、その関数の内容がどのファイルに入っているか示しています！
-例：「//～(gyro_set_func)」＝gyro_set_func.inoに記述*/
+コメントの()内の文言は、その関数の内容がどのファイルに入っているか示しています。
+X軸:ロール、Y軸:ピッチとします。
+例「//～(gyro_set_func)」＝gyro_set_func.inoに記述*/
 
 #include <Wire.h>
 #include "SparkFun_MMA8452Q.h"
@@ -17,28 +18,20 @@ VarSpeedServo vss_down;
 
 const float up = 180, down = -180; //シリアルプロッタの上限と下限の設定
 
-const float offset_deg = 0.0;  //モータの自然な角度
-const float max_deg = 180.0;   //モータ角度上限
-const float min_deg = 0.0;     //モータ標角度下限
-const int servo_first_deg = 0; //サーボモータの初期角度
-const int servo_speed = 80;    //サーボモータの回転速度
-const int sampling = 20;       //角度データのサンプリング回数
+const float offset_deg = 0.0;   //モータの自然な角度[deg]
+const float deg_max = 135.0;    //モータ角度上限[deg]
+const float deg_min = 45.0;     //モータ角度下限[deg]
+const int servo_first_deg = 180; //サーボモータの初期角度[deg]
+const int servo_speed = 0;     //サーボモータの回転速度
+const int sampling = 30;        //角度データのサンプリング回数
 
-float target_deg_max = 95.0; //許容角度上限
-float target_deg_min = 85.0; //許容角度下限
-
-/*X軸用のPID変数*/
-float target_deg_x = 90.0;              //目標角度
-float kp_x = 2, ki_x = 0.5, kd_x = 0.1; // PIDゲイン
-float P_x, I_x, D_x;                    // PID値保存パラメータ
-float deg_x = 0.0, ctl_deg_x = 0.0;
-float dt_x = 0.0, pre_dt_x = 0.0, pre_P_x = 0.0;
-/*Y軸用のPID変数*/
-float target_deg_y = 90.0;
-float kp_y = 2, ki_y = 0.5, kd_y = 0.1;
-float P_y, I_y, D_y;
-float deg_y = 0.0, ctl_deg_y = 0.0;
-float dt_y = 0.0, pre_dt_y = 0.0, pre_P_y = 0.0;
+float target_deg_max = 95.0;            //許容角度上限
+float target_deg_min = 85.0;            //許容角度下限
+float target_deg_x = 60.0;              // X軸の目標角度[deg]
+float target_deg_y = 60.0;              // Y軸の目標角度[deg]
+float kp_x = 0.1, ki_x = 0.002, kd_x = 0.004; // PIDゲイン
+float kp_y = 0.1, ki_y = 0.001, kd_y = 0.001;
+float x_ctl, y_ctl;
 
 /*------------------------------------------------------------------------------------------------*/
 
@@ -49,7 +42,7 @@ void setup()
   motor_standby(servo_first_deg, servo_speed); //モータを初期位置に移動させる(gyro_set_func)
   check_sensor();                              //センサーの接続確認を行う(gyro_set_func)
 
-  delay(2000);
+  delay(3000);
 }
 
 /*------------------------------------------------------------------------------------------------*/
@@ -60,7 +53,7 @@ void loop()
 
   for (int i = 0; i < sampling; i++)
   {                                      //ノイズ軽減のため、[sampling]回データを取って平均する。
-    x_sum = x_sum + ac.getCalculatedX(); //取得データのばらつきが大分マシになる！
+    x_sum = x_sum + ac.getCalculatedX(); //取得データのばらつきが大分マシになる
     y_sum = y_sum + ac.getCalculatedY();
     z_sum = z_sum + ac.getCalculatedZ();
   }
@@ -72,23 +65,36 @@ void loop()
   float y_ang = change_deg(y_average, z_average); //分度器で測ったところ、±1°くらいに収まった。
   float z_ang = ac.getCalculatedZ();
 
-  // vss_right.write(ctl_deg, servo_speed, true);
+  vss_right.write(x_ctl, servo_speed, true);
 
   /*指定した範囲内に角度が収まっていなければPID制御を開始する。*/
-  if (!((x_ang + target_deg_x) > target_deg_min && (x_ang + target_deg_x) < target_deg_max && (y_ang + target_deg_x) > target_deg_min && (y_ang + target_deg_x) < target_deg_max))
+  /*if (!((x_ang + target_deg_x) > target_deg_min && (x_ang + target_deg_x) < target_deg_max && (y_ang + target_deg_x) > target_deg_min && (y_ang + target_deg_x) < target_deg_max))
   {
-    float X = PID_ctl_x(x_ang);
+    x_ctl = PID_ctl_x(x_ang);
+  }
+  else
+  {
+    PID_reset_x();
   }
   if (!((y_ang + target_deg_y) > target_deg_min && (y_ang + target_deg_y) < target_deg_max && (y_ang + target_deg_y) > target_deg_min && (y_ang + target_deg_y) < target_deg_max))
   {
-    float y = PID_ctl_y(y_ang);
+    y_ctl = PID_ctl_y(y_ang);
   }
+  else
+  {
+    PID_reset_y();
+  }*/
 
-  String str = "xの角度:" + String(x_ang) + "," + "yの角度:" + String(y_ang); //シリアルモニタ表示用のメッセージ
-  // String str = "P:" + String(P) + ",   " + "I:" + String(I) + ",   " + "D:" + String(D);
-  //  String str = "output:" + String(output_deg) + "ctl:" + String(ctl_deg) + "target:" + String(target_deg);
-  String graph = (String(up) + "," + String(down));
-  Serial.println(str);
+  x_ctl = PID_ctl_x(x_ang);
+  y_ctl = PID_ctl_y(y_ang);
+
+  // String str = "X:" + String(x_ang) + "," + "Y:" + String(y_ang);            //角度センサが検知した値
+  // String str = "P:" + String(P) + ",   " + "I:" + String(I) + ",   " + "D:" + String(D); // pidの各パラメータ値
+  // String str = "X:" + String(ctl_deg_x) + ",Y:" + String(ctl_deg_y);                     // pidからでた値
+  // String str = "X:" + String(x_ctl) + ",Y:" + String(y_ctl); // pidからでた値を整形した値
+
+  // String graph = "," + (String(up) + "," + String(down));
+  // Serial.println(str + graph);
 
   // delay(10);
 }
