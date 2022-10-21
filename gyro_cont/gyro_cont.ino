@@ -25,12 +25,12 @@ const int servo_first_deg = 0; //サーボモータの初期角度[deg]
 const int servo_speed = 0;     //サーボモータの回転速度
 const int sampling = 30;       //角度データのサンプリング回数
 
-// float target_deg_max = 95.0;            //許容角度上限
-// float target_deg_min = 85.0;            //許容角度下限
-float target_deg_x = 90.0;                    // X軸の目標角度[deg]
-float target_deg_y = 90.0;                    // Y軸の目標角度[deg]
-float kp_x = 0.1, ki_x = 0.0, kd_x = 0.0; // PIDゲイン
-float kp_y = 0.1, ki_y = 0.001, kd_y = 0.001;
+float target_deg_max = 91.0;              //許容角度上限
+float target_deg_min = 89.0;              //許容角度下限
+float target_deg_x = 90.0;                // X軸の目標角度[deg]
+float target_deg_y = 90.0;                // Y軸の目標角度[deg]
+float kp_x = 0.05, ki_x = 0.0, kd_x = 0.0; // PIDゲイン
+float kp_y = 0.05, ki_y = 0.0, kd_y = 0.0;
 float x_ctl, y_ctl;
 
 /*------------------------------------------------------------------------------------------------*/
@@ -42,7 +42,7 @@ void setup()
   motor_standby(servo_first_deg, servo_speed); //モータを初期位置に移動させる(gyro_set_func)
   check_sensor();                              //センサーの接続確認を行う(gyro_set_func)
 
-  delay(3000);
+  delay(2000);
 }
 
 /*------------------------------------------------------------------------------------------------*/
@@ -61,34 +61,35 @@ void loop()
   x_average = x_sum / sampling;
   y_average = y_sum / sampling;
   z_average = z_sum / sampling;
-  float x_ang = change_deg(x_average, z_average)+90; //角度をx,zの値から計算する(gyro_set_func)
-  float y_ang = change_deg(y_average, z_average); //分度器で測ったところ、±1°くらいに収まった。
+  float x_ang = change_deg(x_average, z_average) + 90; //角度をx,zの値から計算する(gyro_set_func)
+  float y_ang = change_deg(y_average, z_average);      //分度器で測ったところ、±1°くらいに収まった。
   float z_ang = ac.getCalculatedZ();
-
-
 
   x_ctl = PID_ctl_x(x_ang);
   y_ctl = PID_ctl_y(y_ang);
 
-  vss_right.write(x_ctl, servo_speed, true);
-
   /*指定した範囲内に角度が収まっていなければPID制御を開始する。*/
-  /*if (!((x_ang + target_deg_x) > target_deg_min && (x_ang + target_deg_x) < target_deg_max && (y_ang + target_deg_x) > target_deg_min && (y_ang + target_deg_x) < target_deg_max))
+  if (!(x_ang > target_deg_min && x_ang < target_deg_max))
   {
     x_ctl = PID_ctl_x(x_ang);
+    vss_right.write(x_ctl, servo_speed, true);
+    Serial.println("in_x");
   }
   else
   {
     PID_reset_x();
+    Serial.println("out_x");
   }
-  if (!((y_ang + target_deg_y) > target_deg_min && (y_ang + target_deg_y) < target_deg_max && (y_ang + target_deg_y) > target_deg_min && (y_ang + target_deg_y) < target_deg_max))
+  if (!(y_ang > target_deg_min && y_ang < target_deg_max))
   {
     y_ctl = PID_ctl_y(y_ang);
+    Serial.println("in_y");
   }
   else
   {
     PID_reset_y();
-  }*/
+    Serial.println("out_y");
+  }
 
   // String str = "X:" + String(x_ang) + "," + "Y:" + String(y_ang);            //角度センサが検知した値
   // String str = "P:" + String(P) + ",   " + "I:" + String(I) + ",   " + "D:" + String(D); // pidの各パラメータ値

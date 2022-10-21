@@ -36,7 +36,7 @@ float PID_ctl_x(float x_ang)
         ctl_deg_x = deg_min;
         output_deg = deg_min;
     }
-    Serial.println(/*"P:" + String(round(P_x)) + ",  " + "I:" + String(round(I_x)) + ",  " + "D:" + String(round(D_x)) + ",  " +*/ "ang:" + String(round(x_ang)) + ",  " + "ctl:" + String(round(ctl_deg_x)) + ",  " + "out:" + String(output_deg));
+    Serial.println("P:" + String(round(P_x)) + ",  " + "I:" + String(round(I_x)) + ",  " + "D:" + String(round(D_x)) + ",  " + "ang:" + String(round(x_ang)) + ",  " + "ctl:" + String(round(ctl_deg_x)) + ",  " + "out:" + String(output_deg));
 
     return output_deg;
 }
@@ -69,4 +69,18 @@ float PID_ctl_y(float y_ang)
     }
 
     return output_deg;
+}
+
+void PID_reset_x()
+{
+    output_deg = 0.0;
+    P_x, I_x, D_x;
+    deg_x = 0.0, ctl_deg_x = 0.0;
+    dt_x, pre_dt_x, pre_P_x;
+}
+void PID_reset_y()
+{
+    P_y, I_y, D_y;
+    deg_y = 0.0, ctl_deg_y = 0.0;
+    dt_y, pre_dt_y, pre_P_y;
 }
