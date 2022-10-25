@@ -30,7 +30,7 @@ float target_deg_max = 91.0;               //許容角度上限
 float target_deg_min = 89.0;               //許容角度下限
 float target_deg_x = 90.0;                 // X軸の目標角度[deg]
 float target_deg_y = 90.0;                 // Y軸の目標角度[deg]
-float t = 0.0;                             //現在時間
+float deg_g = 0.0;                             //現在時間
 float kp_x = 0.05, ki_x = 0.0, kd_x = 0.0; // PIDゲイン
 float kp_y = 0.05, ki_y = 0.0, kd_y = 0.0;
 float x_ctl, y_ctl;
@@ -50,7 +50,7 @@ void setup()
 /*------------------------------------------------------------------------------------------------*/
 void loop()
 {
-  target_deg_x = deg_generater();
+  target_deg_x = deg_generater2();
 
   float x_sum = 0, y_sum = 0, z_sum = 0, x_average, y_average, z_average;
 

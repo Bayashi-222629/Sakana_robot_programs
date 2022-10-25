@@ -1,4 +1,5 @@
-int check_sensor() //センサの接続チェック
+/*センサの接続チェック*/
+int check_sensor()
 {
     while (!ac.begin())
     {
@@ -6,15 +7,16 @@ int check_sensor() //センサの接続チェック
         delay(2000);
     }
 }
-
-float change_deg(float x_y_deg, float z_deg) //ｘｙの値とｚの値を元に角度を計算する。
+/*ｘｙの値とｚの値を元に角度を計算する。*/
+float change_deg(float x_y_deg, float z_deg)
 {
     float deg = round(atan2(x_y_deg, z_deg) * 180.0 / PI);
 
     return deg;
 }
 
-float motor_standby(float servo_first_pos, float servo_speed) //各モータの初期位置の設定
+/*各モータの初期位置の設定*/
+float motor_standby(float servo_first_pos, float servo_speed)
 {
     vss_right.attach(SERVO_NUM_RIGHT);
     vss_left.attach(SERVO_NUM_LEFT);
@@ -26,13 +28,41 @@ float motor_standby(float servo_first_pos, float servo_speed) //各モータの�
     vss_down.write(servo_first_pos, servo_speed, true);
 }
 
-float deg_generater()
+/*目標角度を自動で動かすやつ*/
+float deg_generater1()
 {
     deg_g += 0.01;
-    if (deg_g <= 360)
+    if (deg_g > 180)
     {
         deg_g = 0.0;
     }
 
     return deg_g;
+}
+float deg_generater2()
+{
+    deg_g += 0.01;
+    int output;
+    if (deg_g < 100)
+    {
+        output = 45;
+    }
+    else if (100 <= deg_g && deg_g < 200)
+    {
+        output = 60;
+    }
+
+    else if (200 <= deg_g && deg_g < 300)
+    {
+        output = 90;
+    }
+    else if (300 <= deg_g && deg_g < 300)
+    {
+        output = 100;
+    }
+    else
+    {
+        deg_g = 0.0;
+    }
+    return output;
 }
