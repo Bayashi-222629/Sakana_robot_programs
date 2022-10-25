@@ -1,43 +1,45 @@
 #include "ping1d.h"
+#include "VarSpeedServo.h"
+VarSpeedServo vss_right;
+VarSpeedServo vss_left;
+VarSpeedServo vss_up;
+VarSpeedServo vss_down;
+#define SERVO_NUM_RIGHT 10 //サーボモータの接続ピン番号
+#define SERVO_NUM_LEFT 11  //右：10　左：11　上：12　下：13
+#define SERVO_NUM_UP 12
+#define SERVO_NUM_DOWN 13
+static const uint8_t arduinoTxPin = 16;
+static const uint8_t arduinoRxPin = 17;
 
-static const uint8_t arduinoRxPin = 19; //Serial1 rx
-static const uint8_t arduinoTxPin = 18; //Serial1 tx
-
-static Ping1D ping { Serial1 };
-
-static const uint8_t ledPin = 13;
+Ping1D ping{Serial1};
 
 void setup()
 {
   Serial1.begin(9600);
   Serial.begin(9600);
-  pinMode(ledPin, OUTPUT);
   Serial.println("Blue Robotics ping1d-simple.ino");
-  
-  while (!ping.initialize()) {
-    Serial.println("\nPing device failed to initialize!");
-    Serial.println("Are the Ping rx/tx wired correctly?");
-    Serial.print("Ping rx is the green wire, and should be connected to Arduino pin ");
-    Serial.print(arduinoTxPin);
-    Serial.println(" (Arduino tx)");
-    Serial.print("Ping tx is the white wire, and should be connected to Arduino pin ");
-    Serial.print(arduinoRxPin);
-    Serial.println(" (Arduino rx)");
+
+  while (!ping.initialize())
+  {
+    Serial.print("送信用の緑ピン（TX）の接続が確認できません!");
+    Serial.println(arduinoTxPin);
+    Serial.print("受信用の白ピン（RX）の接続が確認できません!");
+    Serial.println(arduinoRxPin);
     delay(2000);
   }
 }
 
 void loop()
 {
-  if (ping.update()) {
+  if (ping.update())
+  {
     Serial.print("Distance: ");
     Serial.print(ping.distance());
     Serial.print("\tConfidence: ");
     Serial.println(ping.confidence());
-  } else {
+  }
+  else
+  {
     Serial.println("No update received!");
   }
-
-  // Toggle the LED to show that the program is running
-  digitalWrite(ledPin, !digitalRead(ledPin));
 }

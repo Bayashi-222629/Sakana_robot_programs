@@ -25,3 +25,14 @@ float motor_standby(float servo_first_pos, float servo_speed) //各モータの�
     vss_up.write(servo_first_pos, servo_speed, true);
     vss_down.write(servo_first_pos, servo_speed, true);
 }
+
+float deg_generater()
+{
+    deg_g += 0.01;
+    if (deg_g <= 360)
+    {
+        deg_g = 0.0;
+    }
+
+    return deg_g;
+}
