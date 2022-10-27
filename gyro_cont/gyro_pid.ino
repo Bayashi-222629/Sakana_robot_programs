@@ -36,7 +36,7 @@ float PID_ctl_x(float x_ang)
         ctl_deg_x = deg_min;
         output_deg = deg_min;
     }
-    Serial.println("P:" + String(round(P_x)) + ",  " + "I:" + String(round(I_x)) + ",  " + "D:" + String(round(D_x)) + ",  " + "ang:" + String(round(x_ang)) + ",  " + "ctl:" + String(round(ctl_deg_x)) + ",  " + "out:" + String(output_deg));
+    //Serial.println("P:" + String(round(P_x * kp_x)) + ",  " + "I:" + String(round(I_x * ki_x)) + ",  " + "D:" + String(round(D_x * kd_x)) + ",  " + "ang:" + String(round(x_ang)) + ",  " + "ctl:" + String(round(ctl_deg_x)));
 
     return output_deg;
 }

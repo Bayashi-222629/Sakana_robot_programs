@@ -16,8 +16,11 @@ VarSpeedServo vss_down;
 #define SERVO_NUM_UP 12
 #define SERVO_NUM_DOWN 13
 
-static const float up = 180, down = -180; //シリアルプロッタの上限と下限の設定
+static const float up = 180, down = 0; //シリアルプロッタの上限と下限の設定
 static const float pi = 3.141592653589793;
+float deg_g = 0;
+float test_ang;
+int output;
 
 const float offset_deg = 0.0;  //モータの自然な角度[deg]
 const float deg_max = 135.0;   //モータ角度上限[deg]
@@ -30,8 +33,7 @@ float target_deg_max = 91.0;               //許容角度上限
 float target_deg_min = 89.0;               //許容角度下限
 float target_deg_x = 90.0;                 // X軸の目標角度[deg]
 float target_deg_y = 90.0;                 // Y軸の目標角度[deg]
-float deg_g = 0.0;                             //現在時間
-float kp_x = 0.05, ki_x = 0.0, kd_x = 0.0; // PIDゲイン
+float kp_x = 1, ki_x = 0.0, kd_x = 1; // PIDゲイン
 float kp_y = 0.05, ki_y = 0.0, kd_y = 0.0;
 float x_ctl, y_ctl;
 
@@ -50,7 +52,8 @@ void setup()
 /*------------------------------------------------------------------------------------------------*/
 void loop()
 {
-  target_deg_x = deg_generater2();
+  // target_deg_x = deg_generater1();
+  test_ang = deg_generater1();
 
   float x_sum = 0, y_sum = 0, z_sum = 0, x_average, y_average, z_average;
 
@@ -68,40 +71,45 @@ void loop()
   float y_ang = change_deg(y_average, z_average);      //分度器で測ったところ、±1°くらいに収まった。
   float z_ang = ac.getCalculatedZ();
 
-  x_ctl = PID_ctl_x(x_ang);
+  x_ctl = PID_ctl_x(test_ang);
+  // x_ctl = PID_ctl_x(x_ang);
   y_ctl = PID_ctl_y(y_ang);
 
   /*指定した範囲内に角度が収まっていなければPID制御を開始する。*/
-  if (!(x_ang > target_deg_min && x_ang < target_deg_max))
+  /*if (!(x_ang > target_deg_min && x_ang < target_deg_max))
   {
     x_ctl = PID_ctl_x(x_ang);
+    fillet_right(x_ctl, y_ctl, 0);
 
-    Serial.println("in_x");
   }
   else
   {
     PID_reset_x();
-    Serial.println("out_x");
+    // Serial.println("out_x");
   }
   if (!(y_ang > target_deg_min && y_ang < target_deg_max))
   {
     y_ctl = PID_ctl_y(y_ang);
-    Serial.println("in_y");
+    // Serial.println("in_y");
   }
   else
   {
     PID_reset_y();
-    Serial.println("out_y");
-  }
-  /*
-     String str = "X:" + String(x_ang) + "," + "Y:" + String(y_ang);            //角度センサが検知した値
-    // String str = "P:" + String(P) + ",   " + "I:" + String(I) + ",   " + "D:" + String(D); // pidの各パラメータ値
-    // String str = "X:" + String(ctl_deg_x) + ",Y:" + String(ctl_deg_y);                     // pidからでた値
-    // String str = "X:" + String(x_ctl) + ",Y:" + String(y_ctl); // pidからでた値を整形した値
+    // Serial.println("out_y");
+  }*/
 
-     String graph = "," + (String(up) + "," + String(down));
-     Serial.println(str + graph);
-  */
+  // x_ctl = PID_ctl_x(x_ang);
+  // fillet_right(x_ctl, y_ctl, 0);
 
-  // delay(10);
+  Serial.println(String(test_ang) + "," + String(x_ctl));
+  // Serial.println(x_ang);
+  // String str = "X:" + String(x_ang) /*+ "," + "Y:" + String(y_ang)*/;
+  //  String str = "P:" + String(P) + ",   " + "I:" + String(I) + ",   " + "D:" + String(D); // pidの各パラメータ値
+  //  String str = "X:" + String(ctl_deg_x) + ",Y:" + String(ctl_deg_y);                     // pidからでた値
+  //  String str = "X:" + String(x_ctl) + ",Y:" + String(y_ctl); // pidからでた値を整形した値
+
+  // String graph = "," + (String(up) + "," + String(down));
+  // Serial.println(str + graph);
+
+  delay(10);
 }

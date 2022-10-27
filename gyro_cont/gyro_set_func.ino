@@ -31,38 +31,37 @@ float motor_standby(float servo_first_pos, float servo_speed)
 /*目標角度を自動で動かすやつ*/
 float deg_generater1()
 {
-    deg_g += 0.01;
-    if (deg_g > 180)
-    {
-        deg_g = 0.0;
-    }
 
-    return deg_g;
+    deg_g += 0.03;
+
+    output = 90 + 45 * sin(deg_g);
+
+    return output;
 }
 float deg_generater2()
 {
-    deg_g += 0.01;
-    int output;
+    deg_g += 2;
+
     if (deg_g < 100)
     {
-        output = 45;
+        output = 60;
     }
     else if (100 <= deg_g && deg_g < 200)
     {
-        output = 60;
+        output = 90;
     }
 
     else if (200 <= deg_g && deg_g < 300)
     {
-        output = 90;
+        output = 120;
     }
-    else if (300 <= deg_g && deg_g < 300)
+    else if (300 <= deg_g && deg_g < 400)
     {
-        output = 100;
+        output = 90;
     }
     else
     {
-        deg_g = 0.0;
+        deg_g = 0;
     }
     return output;
 }

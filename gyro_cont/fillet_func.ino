@@ -3,7 +3,7 @@
 void fillet_right(float x_ctl,float y_ctl,float water_depth)
 {
 
-    float input = x_ctl;
+    float input = x_ctl;//処理
     vss_right.write(input, servo_speed, true);
 
 }
