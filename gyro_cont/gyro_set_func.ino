@@ -32,15 +32,16 @@ float motor_standby(float servo_first_pos, float servo_speed)
 float deg_generater1()
 {
 
-    deg_g += 0.03;
+    deg_g += 0.1;
+    float rad = 1;
 
-    output = 90 + 45 * sin(deg_g);
+    output = 90 + 45 * sin(rad * deg_g);
 
     return output;
 }
 float deg_generater2()
 {
-    deg_g += 2;
+    deg_g += 1;
 
     if (deg_g < 100)
     {

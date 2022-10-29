@@ -29,12 +29,12 @@ const int servo_first_deg = 0; //サーボモータの初期角度[deg]
 const int servo_speed = 0;     //サーボモータの回転速度
 const int sampling = 30;       //角度データのサンプリング回数
 
-float target_deg_max = 91.0;               //許容角度上限
-float target_deg_min = 89.0;               //許容角度下限
-float target_deg_x = 90.0;                 // X軸の目標角度[deg]
-float target_deg_y = 90.0;                 // Y軸の目標角度[deg]
-float kp_x = 1, ki_x = 0.0, kd_x = 1; // PIDゲイン
-float kp_y = 0.05, ki_y = 0.0, kd_y = 0.0;
+float target_deg_max = 91.0;            //許容角度上限
+float target_deg_min = 89.0;            //許容角度下限
+float target_deg_x = 90.0;              // X軸の目標角度[deg]
+float target_deg_y = 90.0;              // Y軸の目標角度[deg]
+float kp_x = 1, ki_x = 0.0, kd_x = 1.0; // PIDゲイン
+float kp_y = 0.0, ki_y = 0.0, kd_y = 0.0;
 float x_ctl, y_ctl;
 
 /*------------------------------------------------------------------------------------------------*/
@@ -46,14 +46,14 @@ void setup()
   motor_standby(servo_first_deg, servo_speed); //モータを初期位置に移動させる(gyro_set_func)
   check_sensor();                              //センサーの接続確認を行う(gyro_set_func)
 
-  delay(2000);
+  delay(1000);
 }
 
 /*------------------------------------------------------------------------------------------------*/
 void loop()
 {
-  // target_deg_x = deg_generater1();
-  test_ang = deg_generater1();
+  //target_deg_x = deg_generater1();
+  target_deg_x = deg_generater2();
 
   float x_sum = 0, y_sum = 0, z_sum = 0, x_average, y_average, z_average;
 
@@ -71,9 +71,11 @@ void loop()
   float y_ang = change_deg(y_average, z_average);      //分度器で測ったところ、±1°くらいに収まった。
   float z_ang = ac.getCalculatedZ();
 
-  x_ctl = PID_ctl_x(test_ang);
-  // x_ctl = PID_ctl_x(x_ang);
+  //x_ang = deg_generater2();
+  x_ctl = PID_ctl_x(x_ang);
   y_ctl = PID_ctl_y(y_ang);
+  fillet_right(x_ctl, y_ctl, 0);
+
 
   /*指定した範囲内に角度が収まっていなければPID制御を開始する。*/
   /*if (!(x_ang > target_deg_min && x_ang < target_deg_max))
@@ -98,13 +100,11 @@ void loop()
     // Serial.println("out_y");
   }*/
 
-  // x_ctl = PID_ctl_x(x_ang);
   // fillet_right(x_ctl, y_ctl, 0);
+  // Serial.println(String(target_deg_x) + "," + String(x_ctl) + "," + String(x_ang));
+  // Serial.println("サンプル波形:" + String(test_ang) + "," + "制御波形:" + String(x_ctl));
 
-  Serial.println(String(test_ang) + "," + String(x_ctl));
-  // Serial.println(x_ang);
-  // String str = "X:" + String(x_ang) /*+ "," + "Y:" + String(y_ang)*/;
-  //  String str = "P:" + String(P) + ",   " + "I:" + String(I) + ",   " + "D:" + String(D); // pidの各パラメータ値
+  // String str = "X:" + String(x_ang) + "," + "Y:" + String(y_ang);
   //  String str = "X:" + String(ctl_deg_x) + ",Y:" + String(ctl_deg_y);                     // pidからでた値
   //  String str = "X:" + String(x_ctl) + ",Y:" + String(y_ctl); // pidからでた値を整形した値
 
