@@ -33,33 +33,31 @@ float deg_generater1()
 {
 
     deg_g += 0.1;
-    float rad = 1;
-
-    output = 90 + 45 * sin(rad * deg_g);
+    output = 90 + 45 * sin(0.5*deg_g);
+    //Serial.println(output);
 
     return output;
 }
 float deg_generater2()
 {
-    deg_g += 1;
+    deg_g += 1.5;
 
     if (deg_g < 100)
     {
-        output = 60;
+        output = 45;
     }
     else if (100 <= deg_g && deg_g < 200)
     {
         output = 90;
     }
-
-    else if (200 <= deg_g && deg_g < 300)
+    /*else if (200 <= deg_g && deg_g < 300)
     {
         output = 120;
     }
     else if (300 <= deg_g && deg_g < 400)
     {
         output = 90;
-    }
+    }*/
     else
     {
         deg_g = 0;

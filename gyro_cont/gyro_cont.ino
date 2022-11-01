@@ -18,13 +18,13 @@ VarSpeedServo vss_down;
 
 static const float up = 180, down = 0; //シリアルプロッタの上限と下限の設定
 static const float pi = 3.141592653589793;
-float deg_g = 0;
+float deg_g = 0.0;
 float test_ang;
-int output;
+float output;
 
 const float offset_deg = 0.0;  //モータの自然な角度[deg]
-const float deg_max = 135.0;   //モータ角度上限[deg]
-const float deg_min = 45.0;    //モータ角度下限[deg]
+const float deg_max = 270.0;   //モータ角度上限[deg]
+const float deg_min = 0.0;     //モータ角度下限[deg]
 const int servo_first_deg = 0; //サーボモータの初期角度[deg]
 const int servo_speed = 0;     //サーボモータの回転速度
 const int sampling = 30;       //角度データのサンプリング回数
@@ -33,7 +33,7 @@ float target_deg_max = 91.0;            //許容角度上限
 float target_deg_min = 89.0;            //許容角度下限
 float target_deg_x = 90.0;              // X軸の目標角度[deg]
 float target_deg_y = 90.0;              // Y軸の目標角度[deg]
-float kp_x = 1, ki_x = 0.0, kd_x = 1.0; // PIDゲイン
+float kp_x = 1, ki_x = 0.0, kd_x = 0.1; // PIDゲイン
 float kp_y = 0.0, ki_y = 0.0, kd_y = 0.0;
 float x_ctl, y_ctl;
 
@@ -52,8 +52,8 @@ void setup()
 /*------------------------------------------------------------------------------------------------*/
 void loop()
 {
-  //target_deg_x = deg_generater1();
-  target_deg_x = deg_generater2();
+  // target_deg_x = deg_generater1();
+  // target_deg_x = deg_generater2();
 
   float x_sum = 0, y_sum = 0, z_sum = 0, x_average, y_average, z_average;
 
@@ -71,11 +71,11 @@ void loop()
   float y_ang = change_deg(y_average, z_average);      //分度器で測ったところ、±1°くらいに収まった。
   float z_ang = ac.getCalculatedZ();
 
+  //x_ang = deg_generater1();
   //x_ang = deg_generater2();
   x_ctl = PID_ctl_x(x_ang);
   y_ctl = PID_ctl_y(y_ang);
-  fillet_right(x_ctl, y_ctl, 0);
-
+  //fillet_right(x_ctl, y_ctl, 0);
 
   /*指定した範囲内に角度が収まっていなければPID制御を開始する。*/
   /*if (!(x_ang > target_deg_min && x_ang < target_deg_max))
