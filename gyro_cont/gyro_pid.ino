@@ -2,7 +2,7 @@
 ここでは、目標値を0として扱い、最後に実際の出力値まで矯正して出力します*/
 
 static float output_deg = 0.0;
-static float dt = 0.01;
+static float dt = 0.01;     //微小時間
 static float P_x, I_x, D_x; // PID値保存パラメータ
 static float deg_x = 0.0, ctl_deg_x = 0.0;
 static float dt_x, pre_dt_x, pre_P_x, pre_x_ang;
@@ -12,6 +12,7 @@ static float deg_y = 0.0, ctl_deg_y = 0.0;
 static float dt_y, pre_dt_y, pre_P_y;
 
 /*X軸用のPID*/
+/* x_ang：センサで取得したロール角度、target_deg_x：目標値、ctl_deg_x：PID出力*/
 float PID_ctl_x(float x_ang)
 {
 
@@ -20,19 +21,11 @@ float PID_ctl_x(float x_ang)
     D_x = (P_x - pre_P_x) / dt;      //微分項（傾き/微小時間dx/dt）
     pre_P_x = P_x;
 
-    ctl_deg_x = (P_x * kp_x) + (I_x * ki_x) + (D_x * kd_x) + 90;
+    ctl_deg_x = (P_x * kp_x) + (I_x * ki_x) + (D_x * kd_x);
 
-    if (output_deg > deg_max) //モータの動く角度を制限する。
-    {
-        ctl_deg_x = deg_max;
-    }
-    else if (output_deg < deg_min)
-    {
-        ctl_deg_x = deg_min;
-    }
     // Serial.println("P:" + String(round(P_x)) + ",  " + "I:" + String(round(I_x)) + ",  " + "D:" + String(round(D_x)));
-    //Serial.println("センサ:" + String(x_ang) + ",  " + "偏差:" + String(P_x) + ",  " + "I:" + String(I_x * ki_x) + ",  " + "D:" + String(D_x * kd_x) + ",  " + "目標値:" + String(round(target_deg_x)) + ", " + "出力:" + String(ctl_deg_x));
-     Serial.println("ang:" + String(round(x_ang)) + ",  " + "ctl:" + String(round(ctl_deg_x)) + ",  " + "target:" + String(round(target_deg_x)));
+    // Serial.println("センサ:" + String(x_ang) + ",  " + "偏差:" + String(P_x) + ",  " + "I:" + String(I_x * ki_x) + ",  " + "D:" + String(D_x * kd_x) + ",  " + "目標値:" + String(round(target_deg_x)) + ", " + "出力:" + String(ctl_deg_x));
+    // Serial.println("ang:" + String(round(x_ang)) + ",  " + "ctl:" + String(round(ctl_deg_x)) + ",  " + "target:" + String(round(target_deg_x)));
 
     return ctl_deg_x;
 }
@@ -48,14 +41,6 @@ float PID_ctl_y(float y_ang)
 
     ctl_deg_y = (P_y * kp_y) + (I_y * ki_y) + (D_y * kd_y);
 
-    if (output_deg > deg_max)
-    {
-        ctl_deg_y = deg_max;
-    }
-    else if (output_deg < deg_min)
-    {
-        ctl_deg_y = deg_min;
-    }
     // Serial.println("P:" + String(round(P_y)) + ",  " + "I:" + String(round(I_y)) + ",  " + "D:" + String(round(D_y)));
     // Serial.println("偏差:" + String(P_y) + ",  " + "センサ:" + String(y_ang) + ",  " + "I:" + String(I_y * ki_y) + ",  " + "D:" + String(D_y * kd_y) + ",  " + "目標値:" + String(round(target_deg_y)) + ", " + "出力:" + String(ctl_deg_y));
     // Serial.println("ang:" + String(round(y_ang)) + ",  " + "ctl:" + String(round(output_deg)) + ",  " + "target:" + String(round(target_deg_y)));

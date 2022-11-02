@@ -32,9 +32,9 @@ float motor_standby(float servo_first_pos, float servo_speed)
 float deg_generater1()
 {
 
-    deg_g += 0.1;
-    output = 90 + 45 * sin(0.5*deg_g);
-    //Serial.println(output);
+    deg_g += 0.05;
+    output = 90 + 45 * sin(0.5 * deg_g);
+    // Serial.println(output);
 
     return output;
 }
@@ -50,10 +50,10 @@ float deg_generater2()
     {
         output = 90;
     }
-    /*else if (200 <= deg_g && deg_g < 300)
+    else if (200 <= deg_g && deg_g < 300)
     {
-        output = 120;
-    }
+        output = 135;
+    }/*
     else if (300 <= deg_g && deg_g < 400)
     {
         output = 90;
