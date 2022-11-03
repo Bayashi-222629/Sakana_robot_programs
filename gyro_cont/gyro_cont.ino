@@ -19,23 +19,18 @@ VarSpeedServo vss_down;
 static const float up = 180, down = 0; //シリアルプロッタの上限と下限の設定
 static const float pi = 3.141592653589793;
 float deg_g = 0.0;
-float test_ang;
-float output;
-
-const float offset_deg = 0.0;  //モータの自然な角度[deg]
-const float deg_max = 135.0;   //モータ角度上限[deg]
-const float deg_min = 45.0;    //モータ角度下限[deg]
-const int servo_first_deg = 0; //サーボモータの初期角度[deg]
-const int servo_speed = 0;     //サーボモータの回転速度
-const int sampling = 30;       //角度データのサンプリング回数
-
-float target_deg_max = 91.0;                //許容角度上限
-float target_deg_min = 89.0;                //許容角度下限
-float target_deg_x = 90.0;                  // X軸の目標角度[deg]
-float target_deg_y = 90.0;                  // Y軸の目標角度[deg]
-float kp_x = 1.25, ki_x = 0.0, kd_x = 0.01; // PIDゲイン
-float kp_y = 0.0, ki_y = 0.0, kd_y = 0.0;
+float input, output;
 float x_ctl, y_ctl;
+
+const float offset_deg = 0.0;   //モータの自然な角度[deg]
+const float deg_max = 135.0;    //モータ角度上限[deg]
+const float deg_min = 45.0;     //モータ角度下限[deg]
+const int servo_first_deg = 90; //サーボモータの初期角度[deg]
+const int servo_speed = 0;      //サーボモータの回転速度(0で最高速度)
+const int sampling = 30;        //角度データのサンプリング回数(センサの値飛びの防止)
+
+float target_deg_max = 91.0; //許容角度上限
+float target_deg_min = 89.0; //許容角度下限
 
 /*------------------------------------------------------------------------------------------------*/
 
@@ -52,8 +47,8 @@ void setup()
 /*------------------------------------------------------------------------------------------------*/
 void loop()
 {
-  // target_deg_x = deg_generater1();
-  // target_deg_x = deg_generater2();
+  // target_deg_x = deg_generater1(); sin波を再現する(gyro_set_func)
+  // target_deg_x = deg_generater2(); ステップ入力を再現する(gyro_set_func)
 
   float x_sum = 0, y_sum = 0, z_sum = 0, x_average, y_average, z_average;
 
@@ -72,42 +67,43 @@ void loop()
   float z_ang = ac.getCalculatedZ();
 
   // x_ang = 0.0;
-  // x_ang = deg_generater1();
-  // x_ang = deg_generater2();
-  x_ctl = PID_ctl_x(x_ang);
-  y_ctl = PID_ctl_y(y_ang);
-
-  fillet_right(x_ctl, y_ctl, 0);
-  fillet_left(x_ctl, y_ctl, 0);
+  // x_ang = deg_generater1(); sin波を再現する(gyro_set_func)
+  // x_ang = deg_generater2(); ステップ入力を再現する(gyro_set_func)
+  // x_ctl = PID_ctl_x(x_ang); x_angを元にPID制御を行う(gyro_pid)
+  // y_ctl = PID_ctl_y(y_ang); y_angを元にPID制御を行う(gyro_pid)
 
   /*指定した範囲内に角度が収まっていなければPID制御を開始する。*/
-  /*if (!(x_ang > target_deg_min && x_ang < target_deg_max))
+  int flag = 0;
+  if (!(x_ang > target_deg_min && x_ang < target_deg_max))
   {
     x_ctl = PID_ctl_x(x_ang);
-    fillet_right(x_ctl, y_ctl, 0);
-
+    flag++;
   }
   else
-  {
     PID_reset_x();
-    // Serial.println("out_x");
-  }
+
   if (!(y_ang > target_deg_min && y_ang < target_deg_max))
   {
     y_ctl = PID_ctl_y(y_ang);
-    // Serial.println("in_y");
+    flag++;
   }
   else
-  {
     PID_reset_y();
-    // Serial.println("out_y");
-  }*/
 
-  Serial.println(String(target_deg_x) + "," + String(x_ang) + "," + String(x_ctl));
-  // Serial.println("角度センサ:" + String(x_ang) + "," + "制御波形:" + String(x_ctl + 90) + "," + "目標値:" + String(target_deg_x));
+  if (flag > 0)
+  {
+    fillet_right(x_ctl, y_ctl, 0);
+    fillet_left(x_ctl, y_ctl, 0);
+    fillet_up(x_ctl, y_ctl, 0);
+    fillet_down(x_ctl, y_ctl, 0);
+  }
+
+  // Serial.println(String(target_deg_x) + "," + String(x_ang) + "," + String(x_ctl));
+  //  Serial.println("角度センサ:" + String(x_ang) + "," + "制御波形:" + String(x_ctl + 90) + "," + "目標値:" + String(target_deg_x));
+  Serial.println("ロール(X):" + String(x_ang) + "," + "ピッチ(Y):" + String(y_ang) + "," + "ロールctl(Y):" + String(x_ctl) + "," + "ピッチctl(Y):" + String(y_ctl) + "," + "90°:" + String(90));
 
   // String graph = "," + (String(up) + "," + String(down));
   // Serial.println(str + graph);
 
-  delay(10);
+  delay(5);
 }

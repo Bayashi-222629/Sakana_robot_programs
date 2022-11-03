@@ -10,7 +10,7 @@ int check_sensor()
 /*ｘｙの値とｚの値を元に角度を計算する。*/
 float change_deg(float x_y_deg, float z_deg)
 {
-    float deg = round(atan2(x_y_deg, z_deg) * 180.0 / PI);
+    float deg = atan2(x_y_deg, z_deg) * 180.0 / PI;
 
     return deg;
 }
@@ -53,11 +53,11 @@ float deg_generater2()
     else if (200 <= deg_g && deg_g < 300)
     {
         output = 135;
-    }/*
-    else if (300 <= deg_g && deg_g < 400)
-    {
-        output = 90;
-    }*/
+    } /*
+     else if (300 <= deg_g && deg_g < 400)
+     {
+         output = 90;
+     }*/
     else
     {
         deg_g = 0;
