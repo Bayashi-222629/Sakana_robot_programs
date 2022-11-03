@@ -2,5 +2,5 @@
     "board": "arduino:avr:uno",
     "programmer": "arduino:arduinoisp",
     "port": "COM4",
-    "sketch": "Test0930.ino"
+    "sketch": "gyro_cont\\gyro_pid.ino"
 }
