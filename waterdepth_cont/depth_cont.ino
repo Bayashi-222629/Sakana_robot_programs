@@ -1,3 +1,5 @@
+/*深度センサでは、UART通信を使用しています。（角度センサはI2C通信）
+ */
 #include "ping1d.h"
 #include "VarSpeedServo.h"
 VarSpeedServo vss_right;
@@ -5,11 +7,11 @@ VarSpeedServo vss_left;
 VarSpeedServo vss_up;
 VarSpeedServo vss_down;
 #define SERVO_NUM_RIGHT 10 //サーボモータの接続ピン番号
-#define SERVO_NUM_LEFT 11  //右：10　左：11　上：12　下：13
-#define SERVO_NUM_UP 12
-#define SERVO_NUM_DOWN 13
-static const uint8_t arduinoTxPin = 16;
-static const uint8_t arduinoRxPin = 17;
+#define SERVO_NUM_LEFT 11  //右：10　左：11
+static const uint8_t arduinoTxPin = 18;
+static const uint8_t arduinoRxPin = 19;
+
+static float water_depth = 0.0;
 
 Ping1D ping{Serial1};
 
@@ -17,7 +19,6 @@ void setup()
 {
   Serial1.begin(9600);
   Serial.begin(9600);
-  Serial.println("Blue Robotics ping1d-simple.ino");
 
   while (!ping.initialize())
   {
@@ -31,15 +32,10 @@ void setup()
 
 void loop()
 {
-  if (ping.update())
-  {
-    Serial.print("Distance: ");
-    Serial.print(ping.distance());
-    Serial.print("\tConfidence: ");
-    Serial.println(ping.confidence());
-  }
-  else
-  {
-    Serial.println("No update received!");
-  }
+  water_depth = ping.distance();
+
+  Serial.print("Distance: ");
+  Serial.print(ping.distance());
+  Serial.print("\tConfidence: ");
+  Serial.println(ping.confidence());
 }
