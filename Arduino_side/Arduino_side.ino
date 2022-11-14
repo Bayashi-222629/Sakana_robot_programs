@@ -25,7 +25,7 @@ float deg_max = 135.0;                  //モータ角度上限[deg]
 float deg_min = 45.0;                   //モータ角度下限[deg]
 const int servo_first_deg = 90;         //サーボモータの初期角度[deg]
 const int servo_speed = 0;              //サーボモータの回転速度(0で最高速度)
-const int sampling = 30;                //角度データのサンプリング回数(センサのノイズによる値飛びの緩和)
+const float prob = 0.4;                 //角度データの信頼度[%]（ローパスフィルタで使用）
 const float target_deg_max = 91.0;      //機体の安定判定の角度上限（この角度内に機体が収まれば姿勢制御をしない）
 const float target_deg_min = 89.0;      //機体の安定判定の角度下限
 
@@ -35,8 +35,8 @@ float target_depth = 380;                                           //目標深�
 float target_depth_max = target_depth + sensor_position_error + 80; //深度上限[mm]
 float target_depth_min = target_depth - 80;                         //深度下限[mm]
 
-float kp_x = 1.25, ki_x = 0.01, kd_x = 0.025; // xPIDゲイン
-float kp_y = 1.25, ki_y = 0.01, kd_y = 0.025; // yPIDゲイン
+float kp_x = 5, ki_x = 0.0, kd_x = 0.1; // xPIDゲイン
+float kp_y = 5, ki_y = 0.0, kd_y = 0.1; // yPIDゲイン
 float target_deg_x = 90.0;                    // X軸の目標角度[deg]
 float target_deg_y = 90.0;                    // Y軸の目標角度[deg]
 float depth_gain = 0.375;                     // depthゲイン
@@ -66,24 +66,9 @@ void setup()
 /*------------------------------------------------------------------------------------------------*/
 void loop()
 {
-  // Serial.println("power down");
-
-  float x_sum = 0, y_sum = 0, z_sum = 0, x_average, y_average, z_average;
-
-  for (int i = 0; i < sampling; i++)
-  {                                      //ノイズ軽減のため、[sampling]回データを取って平均する。
-    x_sum = x_sum + ac.getCalculatedX(); //取得データのばらつきが大分マシになる
-    y_sum = y_sum + ac.getCalculatedY(); //角度センサから値を読み取る(ライブラリ)
-    z_sum = z_sum + ac.getCalculatedZ();
-  }
-
-  x_average = x_sum / sampling;
-  y_average = y_sum / sampling;
-  z_average = z_sum / sampling;
-  float x_ang = change_deg(x_average, z_average) + 90; //角度をx,zの値から計算する(other_setting.ino)
-  float y_ang = change_deg(y_average, z_average) + 90; //分度器で測ったところ、±1°くらいに収まった。
-  float z_ang = z_average;
-
+  float z_ang = get_data_z(); //センサから角度を読み取り、フィルタに通してdegreeに変換(get_filtered_data.ino)
+  float x_ang = get_data_x(); //角度変換でZを使用する関係でZを先に計算しておく。
+  float y_ang = get_data_y();
   float depth = ping.distance(); //深さの数値取得(ライブラリ)
   depth = 0;
 
@@ -132,7 +117,7 @@ void loop()
   }
 
   // Serial.println(String(45) + "," + String(135) + "," + String(90) + "," + String(x_ang) + "," + String(x_ctl + 90) + "," + String(y_ang) + "," + String(y_ctl + 90));
-  // Serial.println("角度センサX:" + String(x_ang) + "," + "制御波形X:" + String(x_ctl + 90) + "," + "目標値X:" + String(target_deg_x) + "," + "角度センサY:" + String(y_ang) + "," + "制御波形Y:" + String(y_ctl + 90) + "," + "目標値Y:" + String(target_deg_y));
+  Serial.println("角度センサX:" + String(x_ang) + "," + "制御波形X:" + String(x_ctl + 90) + "," + "目標値X:" + String(target_deg_x) + "," + "角度センサY:" + String(y_ang) + "," + "制御波形Y:" + String(y_ctl + 90) + "," + "目標値Y:" + String(target_deg_y));
   //  Serial.println("roll(X):" + String(x_ang) + "," + "pitch(Y):" + String(y_ang) + "," + "roll_ctl(X):" + String(x_ctl) + "," + "pitch_ctl(Y):" + String(y_ctl) + "," + "target:" + String(90));
   //  Serial.println("roll(X):" + String(x_ang) + "," + "pitch(Y):" + String(y_ang) + "," + "target:" + String(90) + "," + "up:" + String(180) + "," + " down:" + String(-180));
   //  String graph = ("," + "up:" + String(180) + "," + " down:" + String(-180));

@@ -15,13 +15,6 @@ int check_sensor()
          delay(2000);
      }*/
 }
-/*ｘｙの値とｚの値を元に角度を計算する。*/
-float change_deg(float x_y_deg, float z_deg)
-{
-    float deg = atan2(x_y_deg, z_deg) * 180.0 / PI;
-
-    return deg;
-}
 
 /*各モータの初期位置の設定*/
 float motor_standby(float servo_first_pos, float servo_speed)
@@ -37,7 +30,7 @@ float motor_standby(float servo_first_pos, float servo_speed)
     vss_down.write(servo_first_pos, servo_speed, true);
 }
 
-/*目標角度を自動で動かすやつ*/
+/*角度を自動で生成するテスト用の関数*/
 float deg_generater1()
 {
 
