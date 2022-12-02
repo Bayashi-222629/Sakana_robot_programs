@@ -21,7 +21,7 @@ float get_data_x()
 
     float deg = atan2(filtered_x_data, filtered_z_data) * 180.0 / PI + 90; //データをdegree表記に変換
 
-    // Serial.println(String(x_data) + "," + String(filtered_x_data)+ "," + String(prob));
+    //Serial.println(String(x_data) + "," + String(filtered_x_data) + "," + String(deg));
 
     return (deg);
 }

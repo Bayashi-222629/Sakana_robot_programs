@@ -2,12 +2,15 @@
 void fillet_right(float x_ctl, float y_ctl, float depth_ctl)
 {
 
-    input = 90 + (x_ctl + y_ctl) * pid_rate + depth_ctl * (1 - pid_rate);
-
+    input = 90+(x_ctl + y_ctl) * pid_rate + depth_ctl * (1 - pid_rate);
+    // Serial.println(String(input));
     if (input > deg_max) //モータの上限以上を出力しないように設定
         input = deg_max;
     if (input < deg_min)
         input = deg_min;
+
+    // input = 90;
+
     vss_right.write(input, servo_speed, true);
 }
 
