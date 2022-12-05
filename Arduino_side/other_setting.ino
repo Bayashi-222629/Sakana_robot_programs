@@ -70,8 +70,8 @@ float deg_generater2()
 float deg_generater3()
 {
 
-    deg_g += 0.01;
-    output = target_depth + 30 * sin(0.5 * deg_g); 
+    deg_g += 0.005;
+    output = target_depth + 100 * sin(0.5 * deg_g); 
     // Serial.println(output);
 
     return output;

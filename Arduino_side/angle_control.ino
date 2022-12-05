@@ -1,4 +1,7 @@
-/*作成こばやし　2022/11/15更新　*/
+/*作成こばやし　2022/12/2更新　
+センサで取得した情報を元にヒレの角度を算出する関数が置いてあります。
+姿勢制御はPIDを用いて、深さ制御は比例制御です。
+*/
 static float dt = 0.1; //微小時間
 
 float P_x, I_x, D_x; // PID値保存パラメータ
@@ -34,11 +37,7 @@ float PID_ctl_y(float y_ang)
   I_y += P_y * dt;
   D_y = (P_y - pre_P_y) / dt;
   pre_P_y = P_y;
-
   ctl_deg_y = (P_y * kp_y) + (I_y * ki_y) + (D_y * kd_y);
-
-  // Serial.println("P:" + String(round(P_y)) + ",  " + "I:" + String(round(I_y)) + ",  " + "D:" + String(round(D_y)));
-  // Serial.println("偏差:" + String(P_y) + ",  " + "センサ:" + String(y_ang) + ",  " + "I:" + String(I_y * ki_y) + ",  " + "D:" + String(D_y * kd_y) + ",  " + "目標値:" + String(round(target_deg_y)) + ", " + "出力:" + String(ctl_deg_y));
 
   return ctl_deg_y;
 }
@@ -50,15 +49,21 @@ float P_ctl_depth(float depth)
   // 30° ÷ 80mm = 0.375(R3のプログラムを流用)
 
   /*プールの高さを1000[mm]と仮定すると…
+  センサ位置～重心の距離：180[mm]
   重心～ヒレ先端の距離：310.5[mm]
   床面とヒレが衝突する重心高さ：310.5[mm]
   水面からヒレが飛び出る重心高さ：689.5[mm]
   ヒレの角度をmax45°動かす時の深さ：340[mm]～420[mm]（目標値±40mm）
-計算結果：「θ ＝(1.125) * h - 427.4999」
   target_depth ＝機体の重心の目標高さ,depth = 現在の高さ
   */
-  depth_ctl = (target_depth - depth) * depth_gain;
 
+  if (depth > target_depth)
+    depth_ctl = (deg_max - 0) / (target_depth_max - target_depth) * (depth - target_depth) + 0;
+
+  if (depth <= target_depth)
+    depth_ctl = (0 - deg_min) / (target_depth - target_depth_min) * (depth - target_depth_min) + deg_min;
+    
+  Serial.println(String(depth_ctl));
   return depth_ctl;
 }
 
