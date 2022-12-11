@@ -1,4 +1,4 @@
-/*作成こばやし　2022/11/15更新　*/
+/*作成こばやし　2022/12/5更新　*/
 void fillet_right(float x_ctl, float y_ctl, float depth_ctl, float rd_L_B, float rd_L_V)
 {
 

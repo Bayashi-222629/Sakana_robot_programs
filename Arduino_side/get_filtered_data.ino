@@ -1,4 +1,4 @@
-/*作成こばやし　2022/11/15更新*/
+/*作成こばやし　2022/12/5更新*/
 float x_data = 0, y_data = 0, z_data = 0;
 float filtered_x_data = 0, pre_filtered_x_data = 0;
 float filtered_y_data = 0, pre_filtered_y_data = 0;

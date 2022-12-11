@@ -63,7 +63,7 @@ float P_ctl_depth(float depth)
   if (depth <= target_depth)
     depth_ctl = (0 - deg_min) / (target_depth - target_depth_min) * (depth - target_depth_min) + deg_min;
     
-  Serial.println(String(depth_ctl));
+  
   return depth_ctl;
 }
 

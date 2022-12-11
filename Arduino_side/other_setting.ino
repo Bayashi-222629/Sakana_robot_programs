@@ -1,4 +1,4 @@
-/*作成こばやし　2022/11/15更新　*/
+/*作成こばやし　2022/12/5更新　*/
 /*センサの接続チェック*/
 int check_sensor()
 {
@@ -7,13 +7,13 @@ int check_sensor()
         Serial.println("角度センサの応答がありません。Arduinoの配線位置を確認してみてください。");
         delay(2000);
     }
-    // while (!ping.initialize())
-    // {
-    //     Serial.println("ソナーの応答がありません!Arduinoの配線位置を確認してみてください。");
-    //     Serial.println(String(arduinoTxPin) + "へ緑の線を接続してください。");
-    //     Serial.println(String(arduinoRxPin) + "へ白の線を接続してください。");
-    //     delay(2000);
-    // }
+    while (!ping.initialize())
+    {
+        Serial.println("ソナーの応答がありません!Arduinoの配線位置を確認してみてください。");
+        Serial.println(String(arduinoTxPin) + "へ緑の線を接続してください。");
+        Serial.println(String(arduinoRxPin) + "へ白の線を接続してください。");
+        delay(2000);
+    }
 }
 
 /*各モータの初期位置の設定*/
@@ -71,7 +71,7 @@ float deg_generater3()
 {
 
     deg_g += 0.005;
-    output = target_depth + 100 * sin(0.5 * deg_g); 
+    output = target_depth + 100 * sin(0.5 * deg_g);
     // Serial.println(output);
 
     return output;
