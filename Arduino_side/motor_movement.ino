@@ -1,11 +1,12 @@
 /*作成こばやし　2022/12/5更新　*/
 void fillet_right(float x_ctl, float y_ctl, float depth_ctl, float rd_L_B, float rd_L_V)
 {
-
-    input = 90 + (x_ctl + y_ctl) * pid_rate + depth_ctl * (1 - pid_rate);
-    Serial.println(String(x_ctl) + "," + String(y_ctl));
-    // Serial.println(String(input));
-    if (input > deg_max) //モータの上限以上を出力しないように設定
+    // 加速度センサと深度センサの割合：pid_rate(-45～45)
+    // 加速度センサ&深度センサとプロポの手動入力の割合：rd_rate
+    input = (90 + (x_ctl + y_ctl) * pid_rate + depth_ctl * (1 - pid_rate)) * rd_rate + (rd_L_B + rd_L_V) * (1 - rd_rate);
+    // Serial.println(String(x_ctl) + "," + String(y_ctl));
+  Serial.println(String(input));
+    if (input > deg_max) // モータの上限以上を出力しないように設定
         input = deg_max;
     if (input < deg_min)
         input = deg_min;
@@ -18,7 +19,7 @@ void fillet_right(float x_ctl, float y_ctl, float depth_ctl, float rd_L_B, float
 void fillet_left(float x_ctl, float y_ctl, float depth_ctl, float rd_L_B, float rd_L_V)
 {
 
-    input = 90 + (x_ctl - y_ctl) * pid_rate + depth_ctl * (1 - pid_rate);
+    input = (90 + (x_ctl - y_ctl) * pid_rate + depth_ctl * (1 - pid_rate)) * rd_rate + (rd_L_B + rd_L_V) * (1 - rd_rate);
 
     if (input > deg_max)
         input = deg_max;
@@ -28,7 +29,7 @@ void fillet_left(float x_ctl, float y_ctl, float depth_ctl, float rd_L_B, float 
 }
 void fillet_up(float x_ctl, float y_ctl, float depth_ctl, float rd_L_B)
 {
-    input = 90 + x_ctl; //上下のヒレは深度制御に影響しないため制御は行わない。
+    input = (90 + x_ctl) * rd_rate + rd_L_B * (1 - rd_rate); // 上下のヒレは深度制御に影響しないため制御は行わない。
 
     if (input > deg_max)
         input = deg_max;
@@ -38,7 +39,7 @@ void fillet_up(float x_ctl, float y_ctl, float depth_ctl, float rd_L_B)
 }
 void fillet_down(float x_ctl, float y_ctl, float depth_ctl, float rd_L_B)
 {
-    input = 90 + x_ctl;
+    input = (90 + x_ctl) * rd_rate + rd_L_B * (1 - rd_rate);
 
     if (input > deg_max)
         input = deg_max;

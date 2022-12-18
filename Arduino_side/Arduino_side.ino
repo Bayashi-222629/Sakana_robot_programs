@@ -22,6 +22,7 @@
 */
 
 #include <Wire.h>              //シリアル通信用ライブラリ
+#include <MsTimer2.h>          //タイマー割り込み用ライブラリ
 #include "SparkFun_MMA8452Q.h" //加速度センサ読み取りライブラリ
 MMA8452Q ac;
 #include "VarSpeedServo.h" //サーボモータ駆動用ライブラリ
@@ -40,6 +41,14 @@ VarSpeedServo vss_down;
 #define RD_L_V A1 // 「レシーバ:Arduino」＝「1:A0,2:A1,3:A2,4:A3」
 #define RD_R_V A2
 #define RD_L_B A3
+static float rd_R_B = 0.0;
+static float rd_L_V = 0.0;
+static float rd_R_V = 0.0;
+static float rd_L_B = 0.0;
+static float z_ang = 0.0;
+static float x_ang = 0.0;
+static float y_ang = 0.0;
+static float depth = 0.0;
 
 static const uint8_t arduinoTxPin = 18; // Arduinoのソナー用txピン（緑）*ライブラリの都合上変更不可
 static const uint8_t arduinoRxPin = 19; // Arduinoのソナー用rxピン（白）*ライブラリの都合上変更不可
@@ -55,6 +64,7 @@ const int servo_speed = 0;         // サーボモータの回転速度(0で最�
 const float angle_prob = 0.3;      // 角度データの信頼度[%]（0～1の値 ローパスフィルタで使用）
 const float radio_prob = 0.3;      // レシーバデータの信頼度[%]（0～1）
 float pid_rate = 1.0;              // PIDとdepthの信号の優先割合（0～1）
+float rd_rate = 0.0;               // プロポの手動制御と自動制御の信号の優先割合（0～1）
 
 float sensor_position_error = 180.0;                          // センサ読み取り位置から重心までの距離[mm]
 float target_depth = 380;                                     // 目標深度[mm]
@@ -77,6 +87,25 @@ String rec_data;
 String rec_data_mini[3];
 float conv_data_mini[3];
 /*------------------------------------------------------------------------------------------------*/
+long get_data()
+{
+
+  rd_R_B = get_data_R_B(); // レシーバから数値を受信し、フィルタに通してdegreeに変換(get_filtered_data.ino)
+  rd_L_V = get_data_L_V(); // プロポのレバー配置は以下の通り。
+  rd_R_V = get_data_R_V(); // R:右, L:左, B:横, V:縦
+  rd_L_B = get_data_L_B(); // L_B＝ロール、L_V＝ピッチ、R_V＝メインモータ回転速度、R_B＝割り当てなし
+
+  z_ang = get_data_z(); // センサから角度を読み取り、フィルタに通してdegreeに変換(get_filtered_data.ino)
+  x_ang = get_data_x(); // 角度変換でZを使用する関係でZを先に計算しておく。
+  y_ang = get_data_y();
+
+  if (ping.update() && ping.confidence() > 0) // これを呼び出さないと深度数値を取得してくれない。
+  {                                           // 公式サイトにはセンサ使用を助ける関数と書いてある(ライブラリ)
+    depth = ping.distance();                  // 深さの数値取得(ライブラリ)
+  }
+}
+
+/*------------------------------------------------------------------------------------------------*/
 
 void setup()
 {
@@ -87,39 +116,29 @@ void setup()
   check_sensor();                              // センサーの接続確認を行う(other_setting.ino)
 
   Serial.println("[Sakana program] power on");
+  MsTimer2::set(300, get_data());
+  MsTimer2::start();
   delay(1000);
 }
 
 /*------------------------------------------------------------------------------------------------*/
 void loop()
 {
-  float rd_R_B = get_data_R_B(); // レシーバから数値を受信し、フィルタに通してdegreeに変換(get_filtered_data.ino)
-  float rd_L_V = get_data_L_V(); // プロポのレバー配置は以下の通り。
-  float rd_R_V = get_data_R_V(); // R:右, L:左, B:横, V:縦
-  float rd_L_B = get_data_L_B(); // L_B＝ロール、L_V＝ピッチ、R_V＝メインモータ回転速度、R_B＝割り当てなし
 
-  float z_ang = get_data_z(); // センサから角度を読み取り、フィルタに通してdegreeに変換(get_filtered_data.ino)
-  float x_ang = get_data_x(); // 角度変換でZを使用する関係でZを先に計算しておく。
-  float y_ang = get_data_y();
+  // fillet_right(x_ctl, y_ctl, depth_ctl, rd_L_B, rd_L_V); // モータへ出力する値の計算及び出力(motor_movement.ino)
+  // fillet_left(x_ctl, y_ctl, depth_ctl, rd_L_B, rd_L_V);
+  // fillet_up(x_ctl, y_ctl, depth_ctl, rd_L_B);
+  // fillet_down(x_ctl, y_ctl, depth_ctl, rd_L_B);
 
-  if (ping.update()) // これを呼び出さないと深度数値を取得してくれない。公式サイトにはセンサ使用を助ける関数と書いてある(ライブラリ)
-  {
-    if (ping.confidence() > 0)
-    {
-      float depth = ping.distance(); // 深さの数値取得(ライブラリ)
-    }
-  }
-
-  // テスト用信号の発生関数---------------------------------------------------------
-  //  target_deg_x = deg_generater1(); //sin波を再現する(other_setting.ino)
-  //  target_deg_x = deg_generater2(); //ステップ入力を再現する(other_setting.ino)
-  //  x_ang = deg_generater1(); // sin波を再現する(other_setting.ino)
-  //  x_ang = deg_generater2(); //ステップ入力を再現する(other_setting.ino)
-  // depth = deg_generater3(); // 深さ用sin波を再現する(other_setting.ino)
-  //------------------------------------------------------------------------------
+  // // テスト用信号の発生関数---------------------------------------------------------
+  // //  target_deg_x = deg_generater1(); //sin波を再現する(other_setting.ino)
+  // //  target_deg_x = deg_generater2(); //ステップ入力を再現する(other_setting.ino)
+  // //  x_ang = deg_generater1(); // sin波を再現する(other_setting.ino)
+  // //  x_ang = deg_generater2(); //ステップ入力を再現する(other_setting.ino)
+  // //  depth = deg_generater3(); // 深さ用sin波を再現する(other_setting.ino)
+  // //------------------------------------------------------------------------------
 
   // 指定した範囲内に角度が収まっていなければPID制御を開始する。
-
   flag = 0;                                                    // このフラグが1以上になっていなければ制御を行わない。（安定していればflagは0のまま）
   if (!(depth > target_depth_min && depth < target_depth_max)) // 目標の深度にいるかを判断
   {
@@ -147,23 +166,23 @@ void loop()
     PID_reset_y(); // ゲイン計算結果のリセット(angle_control.ino)
   }
 
-  Serial.println(String(depth) + "," + String(depth_ctl));
-
   if (flag > 0)
   {
-    // （ロール角,ピッチ角,深度,深度制御の割り込み
+    // ロール角,ピッチ角,深度,深度制御の割り込み
     fillet_right(x_ctl, y_ctl, depth_ctl, rd_L_B, rd_L_V); // モータへ出力する値の計算及び出力(motor_movement.ino)
     fillet_left(x_ctl, y_ctl, depth_ctl, rd_L_B, rd_L_V);
     fillet_up(x_ctl, y_ctl, depth_ctl, rd_L_B);
     fillet_down(x_ctl, y_ctl, depth_ctl, rd_L_B);
   }
 
-  // Serial.println(String(45) + "," + String(135) + "," + String(90) + "," + String(x_ang) + "," + String(x_ctl + 90) + "," + String(y_ang) + "," + String(y_ctl));
-  // Serial.println("角度センサX:" + String(x_ang) + "," + "制御波形X:" + String(x_ctl) + "," + "角度センサY:" + String(y_ang) + "," + "制御波形Y:" + String(y_ctl) + "," + "上限:" + String(180) + "," + "下限:" + String(0));
-  // Serial.println("roll(X):" + String(x_ang) + "," + "pitch(Y):" + String(y_ang) + "," + "target:" + String(90) + "," + "up:" + String(180) + "," + " down:" + String(-180));
-  // String graph = ("," + "up:" + String(180) + "," + " down:" + String(-180));
-  // Serial.println(str + graph);
-
+  // センサの値チェック用の関数----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  //  Serial.println(String(45) + "," + String(135) + "," + String(90) + "," + String(x_ang) + "," + String(x_ctl + 90) + "," + String(y_ang) + "," + String(y_ctl));
+  //  Serial.println("角度センサX:" + String(x_ang) + "," + "制御波形X:" + String(x_ctl) + "," + "角度センサY:" + String(y_ang) + "," + "制御波形Y:" + String(y_ctl) + "," + "上限:" + String(180) + "," + "下限:" + String(0));
+  //  Serial.println("roll(X):" + String(x_ang) + "," + "pitch(Y):" + String(y_ang) + "," + "target:" + String(90) + "," + "up:" + String(180) + "," + " down:" + String(-180));
+  //  String graph = ("," + "up:" + String(180) + "," + " down:" + String(-180));
+  // Serial.println(String(depth) + "," + String(depth_ctl));
+  //  Serial.println(str + graph);
+  //-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
   // Bluetoothによるコマンドの処理
 
   if (Serial.available() > 0)
